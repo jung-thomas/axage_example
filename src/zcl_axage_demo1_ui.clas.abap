@@ -9,7 +9,7 @@ CLASS zcl_axage_demo1_ui DEFINITION
     DATA command TYPE string.
     DATA objxml TYPE string.
     DATA results TYPE string.
-    data help type string.
+    DATA help TYPE string.
   PROTECTED SECTION.
   PRIVATE SECTION.
     DATA bill_developer TYPE REF TO zcl_axage_actor.
@@ -19,72 +19,11 @@ CLASS zcl_axage_demo1_ui DEFINITION
     METHODS init_game.
 ENDCLASS.
 
+
+
 CLASS zcl_axage_demo1_ui IMPLEMENTATION.
 
-  METHOD z2ui5_if_app~main.
-    IF check_initialized = abap_false.
-      check_initialized = abap_true.
-      command = 'MAP'.
-      init_game(  ).
-      help = engine->interprete( 'HELP' )->get(  ).
-      CALL TRANSFORMATION id SOURCE oref = engine
-                           RESULT XML objxml.
-    ELSE.
-      CALL TRANSFORMATION id SOURCE XML objxml
-                           RESULT oref = engine.
-    ENDIF.
 
-    CASE client->get( )-event.
-      WHEN 'BUTTON_POST'.
-        client->popup_message_toast( |{ command } - send to the server| ).
-        DATA(result) = engine->interprete( command ).
-        result->add( |You are in the { engine->player->location->name }.| ).
-        results = |{ result->get(  ) } \n | &&  results.
-
-      WHEN 'BACK'.
-        client->nav_app_leave( client->get_app( client->get( )-id_prev_app_stack  ) ).
-    ENDCASE.
-
-    CALL TRANSFORMATION id SOURCE oref = engine
-                         RESULT XML objxml.
-
-    DATA(view) = z2ui5_cl_xml_view=>factory( )->shell( ).
-    DATA(page) = view->page(
-      title          = 'abap2UI5 and AXAGE - ABAP teX Adventure #1'
-      navbuttonpress = client->_event( 'BACK' )
-      shownavbutton  = abap_false
-    ).
-    page->header_content(
-         )->link(
-             text = 'Source_Code'
-             href = z2ui5_cl_xml_view=>hlp_get_source_code_url( app = me get = client->get( ) )
-             target = '_blank'
-     ).
-
-    DATA(grid) = page->grid( 'L12 M12 S12' )->content( 'layout' ).
-    grid->simple_form(
-        title = 'Axage' editable = abap_true
-        )->content( 'form'
-            )->title( 'Game Input'
-            )->label( 'Command'
-            )->input( client->_bind( command )
-            )->button(
-                text  = 'Execute Command'
-                press = client->_event( 'BUTTON_POST' )
-            )->input(
-               value = client->_bind( objxml )
-
-    ).
-    page->grid( 'L8 M8 S8' )->content( 'layout' ).
-    grid->simple_form( title = 'Game Console' editable = abap_true )->content( 'form'
-        )->text_area( value = client->_bind( results ) editable = 'false' growingmaxlines = '40' growing = abap_True
-                      height = '600px'
-        )->text_area( value = client->_bind( help ) editable = 'false' growingmaxlines = '40' growing = abap_True
-                      height = '600px'
-        ).
-    client->set_next( VALUE #( xml_main = page->get_root( )->xml_get( ) ) ).
-
-  ENDMETHOD.
   METHOD init_game.
     engine = NEW #( ).
     DATA(entrance)   = NEW zcl_axage_room( name = 'Entrance' descr = 'You are in the entrance area. Welcome.' ).
@@ -153,4 +92,75 @@ CLASS zcl_axage_demo1_ui IMPLEMENTATION.
     engine->actors->add( mark_consultant ).
   ENDMETHOD.
 
+
+  METHOD z2ui5_if_app~main.
+    IF check_initialized = abap_false.
+      check_initialized = abap_true.
+      command = 'MAP'.
+      init_game(  ).
+      help = engine->interprete( 'HELP' )->get( ).
+      CALL TRANSFORMATION id SOURCE oref = engine
+                           RESULT XML objxml.
+    ELSE.
+      CALL TRANSFORMATION id SOURCE XML objxml
+                           RESULT oref = engine.
+    ENDIF.
+
+
+    CASE client->get( )-event.
+      WHEN 'BUTTON_POST'.
+        client->popup_message_toast( |{ command } - send to the server| ).
+        DATA(result) = engine->interprete( command ).
+        result->add( |You are in the { engine->player->location->name }.| ).
+
+        IF engine->player->location->things->exists( 'RFC' ).
+          engine->mission_completed = abap_true.
+          result->add( 'Congratulations! You delivered the RFC to the developers!' ).
+        ENDIF.
+        results = |{ result->get(  ) } \n | &&  results.
+
+      WHEN 'BACK'.
+        client->nav_app_leave( client->get_app( client->get( )-id_prev_app_stack  ) ).
+    ENDCASE.
+
+    CALL TRANSFORMATION id SOURCE oref = engine
+                         RESULT XML objxml.
+
+    DATA(view) = z2ui5_cl_xml_view=>factory( )->shell( ).
+    DATA(page) = view->page(
+      title          = 'abap2UI5 and AXAGE - ABAP teX Adventure #1'
+      navbuttonpress = client->_event( 'BACK' )
+      shownavbutton  = abap_false
+    ).
+    page->header_content(
+         )->link(
+             text = 'Source_Code'
+             href = z2ui5_cl_xml_view=>hlp_get_source_code_url( app = me get = client->get( ) )
+             target = '_blank'
+     ).
+
+    DATA(grid) = page->grid( 'L12 M12 S12' )->content( 'layout' ).
+    grid->simple_form(
+        title = 'Axage' editable = abap_true
+        )->content( 'form'
+            )->title( 'Game Input'
+            )->label( 'Command'
+            )->input( client->_bind( command )
+            )->button(
+                text  = 'Execute Command'
+                press = client->_event( 'BUTTON_POST' )
+            )->input(
+               value = client->_bind( objxml )
+
+    ).
+    page->grid( 'L8 M8 S8' )->content( 'layout' ).
+    grid->simple_form( title = 'Game Console' editable = abap_true )->content( 'form'
+        )->text_area( value = client->_bind( results ) editable = 'false' growingmaxlines = '40' growing = abap_True
+                      height = '600px'
+        )->text_area( value = client->_bind( help ) editable = 'false' growingmaxlines = '40' growing = abap_True
+                      height = '600px'
+        ).
+    client->set_next( VALUE #( xml_main = page->get_root( )->xml_get( ) ) ).
+
+  ENDMETHOD.
 ENDCLASS.
