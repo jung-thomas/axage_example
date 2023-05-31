@@ -7,7 +7,6 @@ CLASS zcl_axage_demo1_ui DEFINITION
     INTERFACES z2ui5_if_app.
 
     DATA command TYPE string.
-    DATA objxml TYPE string.
     DATA results TYPE string.
     DATA help TYPE string.
   PROTECTED SECTION.
@@ -99,11 +98,7 @@ CLASS zcl_axage_demo1_ui IMPLEMENTATION.
       command = 'MAP'.
       init_game(  ).
       help = engine->interprete( 'HELP' )->get( ).
-      CALL TRANSFORMATION id SOURCE oref = engine
-                           RESULT XML objxml.
-    ELSE.
-      CALL TRANSFORMATION id SOURCE XML objxml
-                           RESULT oref = engine.
+
     ENDIF.
 
 
@@ -122,9 +117,6 @@ CLASS zcl_axage_demo1_ui IMPLEMENTATION.
       WHEN 'BACK'.
         client->nav_app_leave( client->get_app( client->get( )-id_prev_app_stack  ) ).
     ENDCASE.
-
-    CALL TRANSFORMATION id SOURCE oref = engine
-                         RESULT XML objxml.
 
     DATA(view) = z2ui5_cl_xml_view=>factory( )->shell( ).
     DATA(page) = view->page(
@@ -148,14 +140,11 @@ CLASS zcl_axage_demo1_ui IMPLEMENTATION.
             )->input( client->_bind( command )
             )->button(
                 text  = 'Execute Command'
-                press = client->_event( 'BUTTON_POST' )
-            )->input(
-               value = client->_bind( objxml )
+                press = client->_event( 'BUTTON_POST' ) ).
 
-    ).
     page->grid( 'L8 M8 S8' )->content( 'layout' ).
     grid->simple_form( title = 'Game Console' editable = abap_true )->content( 'form'
-        )->text_area( value = client->_bind( results ) editable = 'false' growingmaxlines = '40' growing = abap_True
+        )->code_editor( value = client->_bind( results ) editable = 'false' type = `plain_text`
                       height = '600px'
         )->text_area( value = client->_bind( help ) editable = 'false' growingmaxlines = '40' growing = abap_True
                       height = '600px'
